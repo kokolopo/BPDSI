@@ -7,7 +7,7 @@ import { MemberService } from "@/services/member.service";
 import { CompanyService } from "@/services/company.service";
 import { BranchService } from "@/services/branch.service";
 import { DepartmentService } from "@/services/department.service";
-import { CheckCircle2, ChevronRight, Upload, X, Loader2 } from "lucide-react";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 import type { Member } from "@/types";
 import { generateKuasaDebetPDF } from "@/lib/pdf";
 
@@ -17,7 +17,6 @@ export default function RegistrationPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState<any>({
     name: "", nik: "", gender: "L", placeOfBirth: "", dateOfBirth: "",
     address: "", phone: "", email: "",
@@ -53,30 +52,6 @@ export default function RegistrationPage() {
   };
   const handlePrev = () => setCurrentStep((prev) => Math.max(prev - 1, 0));
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const url = await MemberService.uploadDocument(file);
-      setFormData((prev) => ({
-        ...prev,
-        documents: [...(prev.documents || []), { id: `DOC${Date.now()}`, type, url, name: file.name }],
-      }));
-    } catch (error) {
-      alert("Gagal mengunggah file. Silakan coba lagi.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const removeDocument = (id: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      documents: prev.documents?.filter((d) => d.id !== id) || [],
-    }));
-  };
 
   const renderStepContent = () => {
     switch (currentStep) {
