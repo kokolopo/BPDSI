@@ -73,6 +73,11 @@ export function RouteGuard({ children }: RouteGuardProps) {
       requiredPermission = "view:member_dashboard";
     }
 
+    // Special case for self-registration by anggota
+    if (matchedRoute === "/registration" && user.role === "anggota") {
+      requiredPermission = "view:member_dashboard"; // Reusing basic member permission
+    }
+
     const accessGranted = hasPermission(user.role, requiredPermission);
     
     if (accessGranted) {

@@ -9,20 +9,22 @@ import { BranchService } from "@/services/branch.service";
 import { DepartmentService } from "@/services/department.service";
 import { CheckCircle2, ChevronRight, Upload, X, Loader2 } from "lucide-react";
 import type { Member } from "@/types";
+import { generateKuasaDebetPDF } from "@/lib/pdf";
 
-const STEPS = ["Data Pribadi", "Data Pekerjaan", "Dokumen", "Selesai"];
+const STEPS = ["Data Pribadi", "Data Pekerjaan", "Kuasa Debet", "Selesai"];
 
 export default function RegistrationPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [formData, setFormData] = useState<Partial<Member>>({
+  const [formData, setFormData] = useState<any>({
     name: "", nik: "", gender: "L", placeOfBirth: "", dateOfBirth: "",
     address: "", phone: "", email: "",
     companyId: "", departmentId: "", branchId: "", position: "",
     documents: [],
     status: "pending",
+    bankName: "", bankBranch: "", bankAccount: "", monthlyDues: "", deductionDate: "", isAgreed: false
   });
 
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: () => CompanyService.getAll({ pageSize: 100 }) });
@@ -32,8 +34,9 @@ export default function RegistrationPage() {
   const createMutation = useMutation({
     mutationFn: (data: Omit<Member, "id" | "registrationNumber" | "createdAt" | "updatedAt">) => MemberService.create(data),
     onSuccess: () => {
+      generateKuasaDebetPDF(formData);
       queryClient.invalidateQueries({ queryKey: ["members"] });
-      setCurrentStep(3); // Go to success step
+      router.push("/dashboard");
     },
   });
 
@@ -43,7 +46,7 @@ export default function RegistrationPage() {
       createMutation.mutate({
         ...formData,
         joinDate: new Date().toISOString(),
-      } as Omit<Member, "id" | "registrationNumber" | "createdAt" | "updatedAt">);
+      } as any);
     } else {
       setCurrentStep((prev) => Math.min(prev + 1, 3));
     }
@@ -156,50 +159,61 @@ export default function RegistrationPage() {
       case 2:
         return (
           <div className="space-y-6 animate-fade-in">
-            <div className="rounded-xl border border-zinc-200 p-6 dark:border-zinc-700">
-              <h4 className="mb-4 font-semibold text-zinc-900 dark:text-white">Upload KTP</h4>
-              <div className="flex items-center gap-4">
-                <div className="relative flex h-24 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 transition-colors hover:border-blue-500 hover:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-800/50 dark:hover:border-blue-500 dark:hover:bg-blue-900/20">
-                  <input type="file" onChange={(e) => handleFileUpload(e, "KTP")} className="absolute inset-0 z-10 cursor-pointer opacity-0" disabled={isUploading} />
-                  <Upload className="mb-2 h-6 w-6 text-zinc-400" />
-                  <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Klik atau drag file kesini</span>
+            <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800/50">
+              <h4 className="mb-4 font-semibold text-zinc-900 dark:text-white">Data Rekening (Pemberi Kuasa)</h4>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Nama Bank *</label>
+                  <input value={formData.bankName} onChange={(e) => setFormData({ ...formData, bankName: e.target.value })} placeholder="Contoh: Bank BPD" className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Cabang Bank *</label>
+                  <input value={formData.bankBranch} onChange={(e) => setFormData({ ...formData, bankBranch: e.target.value })} placeholder="Contoh: Cabang Utama" className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Nomor Rekening *</label>
+                  <input value={formData.bankAccount} onChange={(e) => setFormData({ ...formData, bankAccount: e.target.value })} placeholder="Masukkan nomor rekening Anda" className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-zinc-200 p-6 dark:border-zinc-700">
-              <h4 className="mb-4 font-semibold text-zinc-900 dark:text-white">Upload ID Card Karyawan</h4>
-              <div className="flex items-center gap-4">
-                <div className="relative flex h-24 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 transition-colors hover:border-blue-500 hover:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-800/50 dark:hover:border-blue-500 dark:hover:bg-blue-900/20">
-                  <input type="file" onChange={(e) => handleFileUpload(e, "ID Card")} className="absolute inset-0 z-10 cursor-pointer opacity-0" disabled={isUploading} />
-                  <Upload className="mb-2 h-6 w-6 text-zinc-400" />
-                  <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Klik atau drag file kesini</span>
+            <div className="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800/50">
+              <h4 className="mb-4 font-semibold text-zinc-900 dark:text-white">Detail Kuasa Debet</h4>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Besaran Iuran per Bulan (Rp) *</label>
+                  <input type="number" value={formData.monthlyDues} onChange={(e) => setFormData({ ...formData, monthlyDues: e.target.value })} placeholder="Contoh: 50000" className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Tanggal Pendebetan *</label>
+                  <input type="number" min="1" max="31" value={formData.deductionDate} onChange={(e) => setFormData({ ...formData, deductionDate: e.target.value })} placeholder="Contoh: 25" className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white" />
                 </div>
               </div>
             </div>
-
-            {isUploading && (
-              <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
-                <Loader2 className="h-4 w-4 animate-spin" /> Mengunggah...
+            
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-900/50 dark:bg-blue-900/20">
+              <h4 className="mb-4 font-bold text-blue-900 dark:text-blue-300">Surat Kuasa Debet Rekening</h4>
+              <div className="mb-4 h-48 overflow-y-auto rounded-lg border border-blue-200 bg-white p-4 text-xs text-zinc-700 dark:border-blue-800 dark:bg-zinc-900 dark:text-zinc-300">
+                <p className="font-bold mb-2">Dengan ini menyatakan memberikan kuasa penuh kepada:</p>
+                <ul className="list-disc pl-4 mb-4 space-y-1">
+                  <li>Serikat Pegawai Bank Pembangunan Daerah (Penerima Kuasa)</li>
+                </ul>
+                <p className="font-bold mb-2">1. Objek Kuasa</p>
+                <p className="mb-4">Pemberi Kuasa dengan ini memberikan kuasa kepada Penerima Kuasa untuk melakukan pendebetan (auto-debet) secara berkala setiap bulan atas rekening milik Pemberi Kuasa guna pembayaran iuran keanggotaan Serikat Pegawai.</p>
+                <p className="font-bold mb-2">2. Kewajiban dan Kewenangan Penerima Kuasa</p>
+                <p className="mb-4">Melakukan pendebetan rekening sesuai jumlah dan tanggal yang telah disepakati, menyalurkan dana hasil pendebetan kepada rekening Serikat Pegawai, dan menghentikan pendebetan apabila menerima surat pencabutan kuasa tertulis.</p>
+                <p className="font-bold mb-2">3. Hak Pemberi Kuasa</p>
+                <p className="mb-4">Berhak mencabut/membatalkan surat kuasa ini sewaktu-waktu dengan menyampaikan surat pemberitahuan tertulis, dan berhak memperoleh informasi serta bukti pendebetan setiap bulan.</p>
+                <p className="font-bold mb-2">4. Ketentuan Lain-lain</p>
+                <p>Surat kuasa ini dibuat tanpa hak substitusi. Segala biaya administrasi akibat proses pendebetan menjadi tanggung jawab Pemberi Kuasa. Surat kuasa ini berlaku sejak tanggal disetujui sampai dengan adanya pencabutan.</p>
               </div>
-            )}
-
-            {formData.documents && formData.documents.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="font-semibold text-zinc-900 dark:text-white">File Terunggah</h4>
-                {formData.documents.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-100 text-xs font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">{doc.type}</div>
-                      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{doc.name}</span>
-                    </div>
-                    <button onClick={() => removeDocument(doc.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" checked={formData.isAgreed} onChange={(e) => setFormData({ ...formData, isAgreed: e.target.checked })} className="mt-1 h-5 w-5 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+                <span className="text-sm font-medium text-blue-900 dark:text-blue-300">
+                  Saya telah membaca, memahami, dan menyetujui seluruh syarat dan ketentuan Surat Kuasa Debet Rekening di atas, serta menjamin kebenaran data rekening yang saya berikan.
+                </span>
+              </label>
+            </div>
           </div>
         );
       case 3:
@@ -268,7 +282,7 @@ export default function RegistrationPage() {
             </button>
             <button
               onClick={handleNext}
-              disabled={createMutation.isPending || (currentStep === 2 && isUploading)}
+              disabled={createMutation.isPending || (currentStep === 2 && (!formData.bankName || !formData.bankBranch || !formData.bankAccount || !formData.monthlyDues || !formData.deductionDate || !formData.isAgreed))}
               className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:from-blue-500 hover:to-indigo-500 disabled:opacity-60"
             >
               {createMutation.isPending ? "Menyimpan..." : currentStep === 2 ? "Kirim Registrasi" : "Selanjutnya"}

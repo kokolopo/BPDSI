@@ -47,4 +47,30 @@ export class AuthService {
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
+
+  static async register(name: string, email: string, password: string): Promise<{ success: boolean; message?: string }> {
+    await delay(800);
+    const exists = users.find((u) => u.email === email);
+    if (exists) {
+      return { success: false, message: "Email sudah terdaftar." };
+    }
+
+    const newUser: User = {
+      id: `USR${Date.now()}`,
+      email,
+      password,
+      name,
+      role: "anggota",
+      avatar: "",
+      phone: "",
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString(),
+    };
+
+    users.push(newUser);
+
+    return { success: true };
+  }
 }

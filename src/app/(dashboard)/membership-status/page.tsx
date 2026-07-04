@@ -13,14 +13,34 @@ import {
   ShieldCheck,
   AlertCircle
 } from "lucide-react";
+import Link from "next/link";
 
 export default function MembershipStatusPage() {
   const { user } = useAuthStore();
-  const member = members.find((m) => m.email === user?.email) || members[0];
+  const member = members.find((m) => m.email === user?.email);
+
+  if (!member) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-200/50 bg-white py-16 px-6 text-center shadow-sm dark:border-zinc-800/50 dark:bg-zinc-900/80">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+          <AlertCircle className="h-8 w-8" />
+        </div>
+        <h2 className="mb-2 text-2xl font-bold text-zinc-900 dark:text-white">Status Keanggotaan Belum Terdaftar</h2>
+        <p className="mb-6 max-w-md text-sm text-zinc-500">
+          Anda belum melengkapi data keanggotaan. Silakan lakukan registrasi keanggotaan terlebih dahulu.
+        </p>
+        <Link href="/registration" className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition-all hover:bg-blue-500 hover:shadow-xl hover:shadow-blue-600/30">
+          Registrasi Keanggotaan Sekarang
+        </Link>
+      </div>
+    );
+  }
+
   const company = companies.find((c) => c.id === member.companyId);
   const branch = branches.find((b) => b.id === member.branchId);
 
   const isActive = member.status === "active";
+  const statusLabel = member.status === "pending" ? "MENUNGGU PERSETUJUAN" : member.status.toUpperCase();
   const joinDate = new Date(member.joinDate);
   const now = new Date();
   
@@ -53,7 +73,7 @@ export default function MembershipStatusPage() {
             <h2 className={`text-lg font-bold ${
               isActive ? "text-emerald-800 dark:text-emerald-300" : "text-amber-800 dark:text-amber-300"
             }`}>
-              Status: {isActive ? "AKTIF" : member.status.toUpperCase()}
+              Status: {isActive ? "AKTIF" : statusLabel}
             </h2>
             <p className={`text-sm ${
               isActive ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"

@@ -4,19 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AuthService } from "@/services/auth.service";
-import { useAuthStore } from "@/stores/auth.store";
 import { APP_NAME, APP_FULL_NAME } from "@/constants/menu";
-import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User, Loader2, CheckCircle2 } from "lucide-react";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
-  const { setUser } = useAuthStore();
-
-  const [email, setEmail] = useState("superadmin@example.com");
-  const [password, setPassword] = useState("password123");
+  
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,20 +24,40 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await AuthService.login({ email, password });
-
-      if (response.success && response.user) {
-        setUser(response.user);
-        router.push("/dashboard");
+      const response = await AuthService.register(name, email, password);
+      if (response.success) {
+        setIsSuccess(true);
+        setTimeout(() => {
+          router.push("/login");
+        }, 3000);
       } else {
-        setError(response.message || "Login gagal.");
+        setError(response.message || "Gagal membuat akun.");
       }
     } catch {
-      setError("Terjadi kesalahan. Silakan coba lagi.");
+      setError("Terjadi kesalahan saat mendaftar. Silakan coba lagi.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 dark:bg-zinc-950">
+        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl dark:bg-zinc-900">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+            <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <h2 className="mb-2 text-2xl font-bold text-zinc-900 dark:text-white">Registrasi Berhasil!</h2>
+          <p className="mb-6 text-zinc-500">
+            Akun Anda telah berhasil dibuat. Anda akan diarahkan ke halaman login dalam beberapa detik.
+          </p>
+          <Link href="/login" className="text-sm font-medium text-blue-600 hover:text-blue-500">
+            Kembali ke Login sekarang
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -70,23 +90,6 @@ export default function LoginPage() {
           <p className="mb-8 text-lg text-blue-200/70">
             {APP_FULL_NAME}
           </p>
-
-          {/* Feature list */}
-          <div className="space-y-4 text-left">
-            {[
-              "Manajemen data anggota yang komprehensif",
-              "Pengelolaan iuran dan keuangan terintegrasi",
-              "Sistem surat-menyurat digital",
-              "Dashboard analitik real-time",
-            ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/20">
-                  <div className="h-2 w-2 rounded-full bg-blue-400" />
-                </div>
-                <span className="text-sm text-zinc-300">{feature}</span>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Bottom text */}
@@ -95,7 +98,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Panel — Login Form */}
+      {/* Right Panel — Register Form */}
       <div className="flex w-full items-center justify-center bg-white px-6 dark:bg-zinc-900 lg:w-1/2">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
@@ -110,10 +113,10 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
-              Selamat Datang
+              Buat Akun Baru
             </h2>
             <p className="mt-2 text-sm text-zinc-500">
-              Masukkan email dan password untuk melanjutkan
+              Lengkapi data di bawah ini untuk bergabung dengan BPDSI
             </p>
           </div>
 
@@ -125,6 +128,28 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Name */}
+            <div>
+              <label
+                htmlFor="name"
+                className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                Nama Lengkap
+              </label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full rounded-xl border border-zinc-300 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500/20"
+                  placeholder="Nama Lengkap Anda"
+                  required
+                />
+              </div>
+            </div>
+            
             {/* Email */}
             <div>
               <label
@@ -141,7 +166,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-xl border border-zinc-300 bg-white py-3 pl-11 pr-4 text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500/20"
-                  placeholder="admin@example.com"
+                  placeholder="email@domain.com"
                   required
                 />
               </div>
@@ -165,6 +190,7 @@ export default function LoginPage() {
                   className="w-full rounded-xl border border-zinc-300 bg-white py-3 pl-11 pr-12 text-sm text-zinc-900 outline-none transition-all placeholder:text-zinc-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:focus:border-blue-500 dark:focus:ring-blue-500/20"
                   placeholder="••••••••"
                   required
+                  minLength={8}
                 />
                 <button
                   type="button"
@@ -178,31 +204,14 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
-            </div>
-
-            {/* Remember me & Forgot */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-                <input
-                  type="checkbox"
-                  defaultChecked
-                  className="h-4 w-4 rounded border-zinc-300 bg-white text-blue-600 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800"
-                />
-                Ingat saya
-              </label>
-              <button
-                type="button"
-                className="text-sm font-medium text-blue-600 transition-colors hover:text-blue-500"
-              >
-                Lupa password?
-              </button>
+              <p className="mt-1 text-[10px] text-zinc-500">Minimal 8 karakter</p>
             </div>
 
             {/* Submit */}
             <button
               type="submit"
               disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:from-blue-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-blue-600/30 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all hover:from-blue-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-blue-600/30 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
@@ -210,49 +219,20 @@ export default function LoginPage() {
                   Memproses...
                 </>
               ) : (
-                "Masuk"
+                "Daftar"
               )}
             </button>
 
             <div className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
-              Belum punya akun?{" "}
+              Sudah punya akun?{" "}
               <Link
-                href="/register"
+                href="/login"
                 className="font-semibold text-blue-600 transition-colors hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                Daftar sekarang
+                Masuk di sini
               </Link>
             </div>
           </form>
-
-          {/* Demo credentials */}
-          <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-800/50">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              Demo Credentials
-            </p>
-            <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-              <p>
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">Email:</span>{" "}
-                superadmin@example.com
-              </p>
-              <p>
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">Password:</span>{" "}
-                password123
-              </p>
-            </div>
-
-            <div className="mt-4 mb-4 h-px w-full bg-zinc-200 dark:bg-zinc-800"></div>
-            <div className="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
-              <p>
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">Email:</span>{" "}
-                anggota@example.com
-              </p>
-              <p>
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">Password:</span>{" "}
-                password123
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
