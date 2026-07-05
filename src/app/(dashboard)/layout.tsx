@@ -16,6 +16,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const { isAuthenticated, isLoading, hydrate } = useAuthStore();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     hydrate();
@@ -26,6 +27,11 @@ export default function DashboardLayout({
       router.push("/login");
     }
   }, [isLoading, isAuthenticated, router]);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, []);
 
   if (isLoading) {
     return (
@@ -51,14 +57,43 @@ export default function DashboardLayout({
         <Sidebar
           collapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          mobileOpen={mobileMenuOpen}
+          onMobileClose={() => setMobileMenuOpen(false)}
         />
-        <Navbar sidebarCollapsed={sidebarCollapsed} />
-        <main
-          className="min-h-[calc(100vh-64px)] p-6 transition-all duration-300"
-          style={{ marginLeft: sidebarCollapsed ? 72 : 260 }}
+        <div
+          className="transition-all duration-300 lg:ml-0"
+          style={{ marginLeft: 0 }}
         >
-          <div className="animate-fade-in">{children}</div>
-        </main>
+          <div
+            className="hidden lg:block"
+            style={{ marginLeft: sidebarCollapsed ? 72 : 260 }}
+          >
+            <Navbar
+              sidebarCollapsed={sidebarCollapsed}
+              onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+            />
+          </div>
+          <div className="lg:hidden">
+            <Navbar
+              sidebarCollapsed={false}
+              onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+            />
+          </div>
+          <main
+            className="min-h-[calc(100vh-64px)] p-4 transition-all duration-300 sm:p-6"
+            style={{ marginLeft: 0 }}
+          >
+            <div
+              className="hidden lg:block"
+              style={{ marginLeft: sidebarCollapsed ? 72 : 260 }}
+            >
+              <div className="animate-fade-in">{children}</div>
+            </div>
+            <div className="lg:hidden">
+              <div className="animate-fade-in">{children}</div>
+            </div>
+          </main>
+        </div>
       </div>
     </RouteGuard>
   );

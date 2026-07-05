@@ -43,19 +43,10 @@ export default function LoginPage() {
     <div className="flex min-h-screen">
       {/* Left Panel — Decorative */}
       <div className="relative hidden w-1/2 lg:flex lg:flex-col lg:items-center lg:justify-center overflow-hidden bg-gradient-to-br from-zinc-950 via-blue-950 to-indigo-950">
-        {/* Animated background shapes */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -left-20 -top-20 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" />
-          <div className="absolute -bottom-32 -right-32 h-[500px] w-[500px] rounded-full bg-indigo-600/10 blur-3xl" />
-          <div className="absolute left-1/2 top-1/3 h-64 w-64 -translate-x-1/2 rounded-full bg-blue-500/5 blur-2xl" />
-          {/* Grid overlay */}
-          <div
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-              backgroundSize: "60px 60px",
-            }}
-          />
+        {/* Background image */}
+        <div className="absolute inset-0">
+          <img src="/images/bpdsi.png" alt="" className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-br from-zinc-950/80 via-blue-950/70 to-indigo-950/80" />
         </div>
 
         <div className="relative z-10 max-w-lg px-12 text-center">

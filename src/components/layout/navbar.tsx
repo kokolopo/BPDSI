@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, LogOut, Search, User, ChevronRight } from "lucide-react";
+import { Bell, LogOut, Search, User, ChevronRight, Menu } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { useAuthStore } from "@/stores/auth.store";
 import { ROLE_LABELS } from "@/constants/menu";
@@ -11,9 +11,10 @@ import { useState, useRef, useEffect } from "react";
 
 interface NavbarProps {
   sidebarCollapsed: boolean;
+  onMobileMenuToggle: () => void;
 }
 
-export function Navbar({ sidebarCollapsed }: NavbarProps) {
+export function Navbar({ sidebarCollapsed, onMobileMenuToggle }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
@@ -58,12 +59,20 @@ export function Navbar({ sidebarCollapsed }: NavbarProps) {
 
   return (
     <header
-      className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200 bg-white/80 px-6 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-zinc-900/80"
-      style={{ marginLeft: sidebarCollapsed ? 72 : 260 }}
+      className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-zinc-200 bg-white/80 px-4 backdrop-blur-xl dark:border-zinc-800/50 dark:bg-zinc-900/80 sm:px-6 lg:ml-0"
+      style={{ marginLeft: undefined }}
     >
-      {/* Left: Breadcrumb */}
-      <div className="flex items-center gap-2">
-        <nav className="flex items-center gap-1 text-sm">
+      {/* Left: Hamburger + Breadcrumb */}
+      <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMobileMenuToggle}
+          className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-500 transition-all hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100 lg:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        <nav className="hidden items-center gap-1 text-sm sm:flex">
           {breadcrumb.map((crumb, index) => (
             <div key={crumb.href} className="flex items-center gap-1">
               {index > 0 && (
@@ -81,12 +90,16 @@ export function Navbar({ sidebarCollapsed }: NavbarProps) {
             </div>
           ))}
         </nav>
+        {/* Mobile: show only page title */}
+        <span className="text-sm font-semibold text-zinc-900 dark:text-white sm:hidden">
+          {breadcrumb.length > 0 ? breadcrumb[breadcrumb.length - 1].label : ""}
+        </span>
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-2">
-        {/* Search */}
-        <button className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition-all hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100">
+      <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Search — hidden on very small screens */}
+        <button className="hidden h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition-all hover:bg-zinc-50 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100 sm:flex">
           <Search className="h-4 w-4" />
         </button>
 
@@ -105,7 +118,7 @@ export function Navbar({ sidebarCollapsed }: NavbarProps) {
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-3 rounded-xl border border-zinc-200 bg-white py-1.5 pl-1.5 pr-3 transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+            className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white py-1.5 pl-1.5 pr-2 transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 sm:gap-3 sm:pr-3"
           >
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
               {user ? getInitials(user.name) : "?"}

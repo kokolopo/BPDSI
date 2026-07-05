@@ -8,14 +8,16 @@ import { APP_NAME, APP_FULL_NAME } from "@/constants/menu";
 import { getMenusForRole, MenuItem } from "@/lib/permissions/menus";
 import { useAuthStore } from "@/stores/auth.store";
 import { hasPermission } from "@/lib/permissions/permissions";
-import { ChevronDown, ChevronLeft, PanelLeftClose, PanelLeft } from "lucide-react";
+import { ChevronDown, ChevronLeft, PanelLeftClose, PanelLeft, X } from "lucide-react";
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuthStore();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
@@ -33,14 +35,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   const allowedMenus = useMemo(() => {
     if (!user) return [];
-    // Currently, our dynamic menu is flat, but we could add submenus in the future.
-    // For now, we fetch the available menus based on role, then filter by specific permissions.
-    const allRoleMenus = getMenusForRole(user.role, 1); // pass user.role
+    const allRoleMenus = getMenusForRole(user.role, 1);
     return allRoleMenus.filter(menu => hasPermission(user.role, menu.permission));
   }, [user]);
 
   const renderMenuItem = (item: any) => {
-    const active = isActive(item.path); // our menus use 'path' instead of 'href'
+    const active = isActive(item.path);
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedMenus.includes(item.id);
 
@@ -75,6 +75,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 <Link
                   key={child.id}
                   href={child.path}
+                  onClick={onMobileClose}
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-200",
                     isActive(child.path)
@@ -99,6 +100,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <Link
         key={item.id}
         href={item.path}
+        onClick={onMobileClose}
         className={cn(
           "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
           active
@@ -125,53 +127,75 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   };
 
   return (
-    <aside
-      className={cn(
-        "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-zinc-800/50 bg-zinc-950 transition-all duration-300",
-        collapsed ? "w-[72px]" : "w-[260px]"
+    <>
+      {/* Mobile overlay backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          onClick={onMobileClose}
+        />
       )}
-    >
-      {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b border-zinc-800/50 px-4">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-600/20">
-            <span className="text-sm font-bold text-white">SP</span>
-          </div>
-          {!collapsed && (
-            <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-wide text-white">
-                {APP_NAME}
-              </span>
-              <span className="text-[10px] text-zinc-500">
-                {APP_FULL_NAME.length > 30 ? "Admin Serikat Pekerja" : APP_FULL_NAME}
-              </span>
+
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-50 flex h-screen flex-col border-r border-zinc-800/50 bg-zinc-950 transition-all duration-300",
+          // Desktop: show normally
+          "lg:z-40",
+          collapsed ? "lg:w-[72px]" : "lg:w-[260px]",
+          // Mobile: slide in/out as drawer
+          "w-[280px]",
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        {/* Logo */}
+        <div className="flex h-16 items-center justify-between border-b border-zinc-800/50 px-4">
+          <Link href="/dashboard" className="flex items-center gap-3" onClick={onMobileClose}>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-600/20">
+              <span className="text-sm font-bold text-white">SP</span>
             </div>
-          )}
-        </Link>
-      </div>
+            {!collapsed && (
+              <div className="flex flex-col">
+                <span className="text-sm font-bold tracking-wide text-white">
+                  {APP_NAME}
+                </span>
+                <span className="text-[10px] text-zinc-500">
+                  {APP_FULL_NAME.length > 30 ? "Admin Serikat Pekerja" : APP_FULL_NAME}
+                </span>
+              </div>
+            )}
+          </Link>
+          {/* Mobile close button */}
+          <button
+            onClick={onMobileClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-        {allowedMenus.map(renderMenuItem)}
-      </nav>
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+          {allowedMenus.map(renderMenuItem)}
+        </nav>
 
-      {/* Collapse Toggle */}
-      <div className="border-t border-zinc-800/50 p-3">
-        <button
-          onClick={onToggle}
-          className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm text-zinc-500 transition-all hover:bg-zinc-800/50 hover:text-zinc-300"
-        >
-          {collapsed ? (
-            <PanelLeft className="h-5 w-5" />
-          ) : (
-            <>
-              <PanelLeftClose className="h-5 w-5" />
-              <span>Collapse</span>
-              <ChevronLeft className="ml-auto h-4 w-4" />
-            </>
-          )}
-        </button>
-      </div>
-    </aside>
+        {/* Collapse Toggle — desktop only */}
+        <div className="hidden border-t border-zinc-800/50 p-3 lg:block">
+          <button
+            onClick={onToggle}
+            className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm text-zinc-500 transition-all hover:bg-zinc-800/50 hover:text-zinc-300"
+          >
+            {collapsed ? (
+              <PanelLeft className="h-5 w-5" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-5 w-5" />
+                <span>Collapse</span>
+                <ChevronLeft className="ml-auto h-4 w-4" />
+              </>
+            )}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
